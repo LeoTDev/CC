@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.Html;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -27,6 +28,10 @@ import java.io.IOException;
 public class PostListFragment extends ListFragment
 implements AdapterView.OnItemClickListener {
 
+    private TextView mEmptyList;
+    private View mBtnRefresh;
+    private View mProgressContainer;
+
     private OkHttpClient mClient = new OkHttpClient();
     private PostsAdapter mAdapter = null;
 
@@ -37,10 +42,29 @@ implements AdapterView.OnItemClickListener {
     }
 
     @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        View reply = inflater.inflate(R.layout.fragment_postlist, null);
+
+        mEmptyList = (TextView) reply.findViewById(android.R.id.empty);
+
+        mProgressContainer = reply.findViewById(R.id.progressContainer);
+
+        mBtnRefresh = reply.findViewById(R.id.btn_download);
+        mBtnRefresh.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                refreshPosts(true);
+            }
+        });
+
+        return reply;
+    }
+
+    @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        refreshPosts();
+        refreshPosts(false);
         getListView().setOnItemClickListener(this);
     }
 
@@ -58,28 +82,40 @@ implements AdapterView.OnItemClickListener {
 
     }
 
+    /**
+     * List view adapter setting.
+     * @param posts data
+     */
     protected void updatePosts(final JSONArray posts) {
         mAdapter = new PostsAdapter(posts);
         getListView().post(new Runnable() {
             @Override
             public void run() {
+                if(mAdapter.getCount() == 0)
+                    mEmptyList.setText(getString(R.string.err_no_items));
                 setListAdapter(mAdapter);
             }
         });
 
     }
 
-    public void refreshPosts() {
-        if(mAdapter != null) return;
+    /**
+     * HTTP request.
+     * @param force true if should make HTTP Request anyway, false if should use in memory cache.
+     */
+    public void refreshPosts(boolean force) {
+        if(mAdapter != null && !force) return;
 
         Request request = new Request.Builder()
             .url(getString(R.string.urlPosts))
             .build();
 
+        hideList();
         mClient.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Request request, IOException e) {
-
+                mEmptyList.setText(getString(R.string.err_connection_ko));
+                showList();
             }
 
             @Override
@@ -88,15 +124,27 @@ implements AdapterView.OnItemClickListener {
                     JSONObject json = new JSONObject(response.body().string());
                     JSONArray postsJson = json.getJSONArray("posts");
                     updatePosts(postsJson);
+                    showList();
                 }catch (JSONException e){
                     e.printStackTrace();
                 }
             }
         });
-
-        
     }
 
+    private void hideList(){
+        GUIUtils.alphaSwitch(null, mBtnRefresh, View.INVISIBLE);
+        GUIUtils.alphaSwitch(mProgressContainer, getListView(), View.INVISIBLE);
+    }
+
+    private void showList(){
+        GUIUtils.alphaSwitch(getListView(), mProgressContainer, View.INVISIBLE);
+        GUIUtils.alphaSwitch(mBtnRefresh, null, View.INVISIBLE);
+    }
+
+    /**
+     * Custom adapter
+     */
     private class PostsAdapter extends BaseAdapter {
 
         private final JSONArray mPostData;

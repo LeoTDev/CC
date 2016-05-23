@@ -114,8 +114,13 @@ implements AdapterView.OnItemClickListener {
         mClient.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Request request, IOException e) {
-                mEmptyList.setText(getString(R.string.err_connection_ko));
-                showList();
+                mEmptyList.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        mEmptyList.setText(getString(R.string.err_connection_ko));
+                        showList();
+                    }
+                }, 1000);
             }
 
             @Override

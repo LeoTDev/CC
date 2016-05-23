@@ -22,13 +22,13 @@ dependencies {
  
 android {
 
-    compileSdkVersion 21
+    compileSdkVersion 23
     buildToolsVersion "19.1.0"
 
     defaultConfig {
 
         minSdkVersion 15
-        targetSdkVersion 21
+        targetSdkVersion 23
 
         applicationId "com.test.cc"
         versionName "1.0.0"

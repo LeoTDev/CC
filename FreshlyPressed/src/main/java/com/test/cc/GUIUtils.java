@@ -38,6 +38,7 @@ public class GUIUtils {
         int shortAnimTime;
 
         if(showView != null){
+            showView.clearAnimation();
             shortAnimTime = showView.getResources().getInteger(android.R.integer.config_shortAnimTime);
             showView.setAlpha(0);
             showView.setVisibility(View.VISIBLE);
@@ -49,6 +50,7 @@ public class GUIUtils {
                 return;
         }
 
+        hideView.clearAnimation();
         shortAnimTime = hideView.getResources().getInteger(android.R.integer.config_shortAnimTime);
         hideView.setAlpha(1);
         hideView.setVisibility(View.VISIBLE);

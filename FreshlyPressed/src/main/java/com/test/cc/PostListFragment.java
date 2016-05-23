@@ -3,6 +3,7 @@ package com.test.cc;
 import android.app.ListFragment;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Bundle;
 import android.text.Html;
 import android.view.View;
 import android.view.ViewGroup;
@@ -26,19 +27,21 @@ import java.io.IOException;
 public class PostListFragment extends ListFragment
 implements AdapterView.OnItemClickListener {
 
-    OkHttpClient mClient = new OkHttpClient();
-
-    // empty constructor necessary for fragments
-    public PostListFragment() {}
+    private OkHttpClient mClient = new OkHttpClient();
+    private PostsAdapter mAdapter = null;
 
     @Override
-    public void onResume() {
-        super.onResume();
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setRetainInstance(true);
+    }
+
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
 
         refreshPosts();
-
         getListView().setOnItemClickListener(this);
-
     }
 
     @Override
@@ -56,20 +59,21 @@ implements AdapterView.OnItemClickListener {
     }
 
     protected void updatePosts(final JSONArray posts) {
-
+        mAdapter = new PostsAdapter(posts);
         getListView().post(new Runnable() {
             @Override
             public void run() {
-                setListAdapter(new PostsAdapter(posts));
+                setListAdapter(mAdapter);
             }
         });
 
     }
 
     public void refreshPosts() {
+        if(mAdapter != null) return;
 
         Request request = new Request.Builder()
-            .url("https://public-api.wordpress.com/rest/v1/freshly-pressed?number=30")
+            .url(getString(R.string.urlPosts))
             .build();
 
         mClient.newCall(request).enqueue(new Callback() {
@@ -126,7 +130,7 @@ implements AdapterView.OnItemClickListener {
 
             Post post = getItem(position);
 
-            title.setText(post.getTitle());
+            title.setText(Html.fromHtml(post.getTitle().toString()));
             summary.setText(Html.fromHtml(post.getExcerpt().toString()));
 
             try {

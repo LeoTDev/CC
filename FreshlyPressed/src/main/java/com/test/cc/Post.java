@@ -28,4 +28,9 @@ public class Post {
         return Uri.parse(mJson.optString("URL"));
     }
 
+    public String getFeaturedImage(){
+        String reply = mJson.optString("featured_image");
+        return reply != null && reply.length() > 0 ? reply : null;
+    }
+
 }

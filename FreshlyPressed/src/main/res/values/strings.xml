@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Freshly Pressed</string>
+    <string name="err_connection_ko">Check internet connection</string>
+    <string name="err_no_items">No items</string>
+    <string name="loading">Loading</string>
 </resources>

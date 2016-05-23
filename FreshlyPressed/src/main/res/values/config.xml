@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="urlPosts">https://public-api.wordpress.com/rest/v1/freshly-pressed?number=30</string>
+</resources>

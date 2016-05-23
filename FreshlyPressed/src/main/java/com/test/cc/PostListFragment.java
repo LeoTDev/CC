@@ -2,21 +2,24 @@ package com.test.cc;
 
 import android.app.ListFragment;
 import android.content.Intent;
+import android.net.Uri;
 import android.text.Html;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
+import android.widget.ImageView;
 import android.widget.TextView;
 
-import org.json.JSONObject;
-import org.json.JSONArray;
-import org.json.JSONException;
-
+import com.squareup.okhttp.Callback;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.Response;
-import com.squareup.okhttp.Callback;
+import com.squareup.picasso.Picasso;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.IOException;
 
@@ -52,9 +55,14 @@ implements AdapterView.OnItemClickListener {
 
     }
 
-    protected void updatePosts(JSONArray posts) {
+    protected void updatePosts(final JSONArray posts) {
 
-        setListAdapter(new PostsAdapter(posts));
+        getListView().post(new Runnable() {
+            @Override
+            public void run() {
+                setListAdapter(new PostsAdapter(posts));
+            }
+        });
 
     }
 
@@ -64,11 +72,24 @@ implements AdapterView.OnItemClickListener {
             .url("https://public-api.wordpress.com/rest/v1/freshly-pressed?number=30")
             .build();
 
-        Response response = mClient.newCall(request).execute();
+        mClient.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Request request, IOException e) {
 
-        JSONObject json = new JSONObject(response.body().string());
-        JSONArray postsJson = json.getJSONArray("posts");
-        updatePosts(postsJson);
+            }
+
+            @Override
+            public void onResponse(Response response) throws IOException {
+                try {
+                    JSONObject json = new JSONObject(response.body().string());
+                    JSONArray postsJson = json.getJSONArray("posts");
+                    updatePosts(postsJson);
+                }catch (JSONException e){
+                    e.printStackTrace();
+                }
+            }
+        });
+
         
     }
 
@@ -94,18 +115,36 @@ implements AdapterView.OnItemClickListener {
         @Override
         public View getView(int position, View view, ViewGroup parent) {
 
-            View itemView = getActivity().getLayoutInflater()
-                .inflate(R.layout.post_list_fragment_item, parent, false);
+            if(view == null){
+                view = getActivity().getLayoutInflater()
+                        .inflate(R.layout.post_list_fragment_item, parent, false);
+            }
 
-            TextView title = (TextView) itemView.findViewById(R.id.title);
-            TextView summary = (TextView) itemView.findViewById(R.id.summary);
+            TextView title = (TextView) view.findViewById(R.id.title);
+            TextView summary = (TextView) view.findViewById(R.id.summary);
+            ImageView image = (ImageView) view.findViewById(R.id.image);
 
             Post post = getItem(position);
 
             title.setText(post.getTitle());
             summary.setText(Html.fromHtml(post.getExcerpt().toString()));
 
-            return itemView;
+            try {
+                Uri uri = Uri.parse(post.getFeaturedImage());
+                Picasso
+                        .with(view.getContext())
+                        .load(uri)
+                        .resize(parent.getWidth(), (int)getResources().getDimension(R.dimen.img_height))
+                        .centerInside()
+                        .placeholder(android.R.drawable.progress_indeterminate_horizontal)
+                        .error(android.R.drawable.stat_notify_error)
+                        .into(image);
+            }catch (NullPointerException e){
+                Picasso.with(view.getContext()).cancelRequest(image);
+                image.setImageBitmap(null);
+            }
+
+            return view;
         }
 
         @Override
